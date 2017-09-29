@@ -5,11 +5,21 @@ const  {app}  = require ('./../server');
 const {Todo} = require('./../models/todo');
 const {User} = require('./../models/user');
 
+//for get test need some todo items
+const todos =[{
+    text: 'First test todo'
+}, {
+    text: 'second test todo'
+}];
+
 //to clear Todo DB before test
 beforeEach ((done)=>{
-    Todo.remove({}).then(() => done());
+    // Todo.remove({}).then(() => done());
+    Todo.remove({}).then(() => {
+        return Todo.insertMany(todos);
+    }).then(()=> done());
 });
-
+//test script for POST/todos
 describe('POST/todos', () =>{
     it('should create a new todo', (done) =>{
         let text = 'Test todo text';
@@ -26,7 +36,7 @@ describe('POST/todos', () =>{
                 return done(err);
             }
 
-            Todo.find().then((todos) =>{
+            Todo.find({text}).then((todos) =>{
                 expect(todos.length).toBe(1);
                 expect(todos[0].text).toBe(text);
                 done();
@@ -48,9 +58,22 @@ describe('POST/todos', () =>{
                 }
 
                 Todo.find().then((todos) =>{
-                    expect(todos.length).toBe(0);
+                    expect(todos.length).toBe(2);
                     done();
                 }).catch((e) => done(e));
             });
         });
+});
+
+//test script for GET /todos:
+describe('GET /todos', () =>{
+    it('should get all todos', (done) => {
+        request (app)
+            .get ('/todos')
+            .expect (200)
+            .expect((res) =>{
+                expect(todos.length).toBe(2);
+            })
+            .end (done);
+    });
 });
