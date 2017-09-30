@@ -1,14 +1,16 @@
 const expect = require ('expect');
 const  request = require ('supertest');
-
+const {ObjectID} =require ('mongodb');
 const  {app}  = require ('./../server');
 const {Todo} = require('./../models/todo');
 const {User} = require('./../models/user');
 
 //for get test need some todo items
 const todos =[{
+    _id: new ObjectID,
     text: 'First test todo'
 }, {
+    _id: new ObjectID,
     text: 'second test todo'
 }];
 
@@ -32,9 +34,7 @@ describe('POST/todos', () =>{
                 expect(res.body.text).toBe(text );
         })
         .end((err, res) => {
-            if(err){
-                return done(err);
-            }
+            if(err){ return done(err); }
 
             Todo.find({text}).then((todos) =>{
                 expect(todos.length).toBe(1);
@@ -53,9 +53,7 @@ describe('POST/todos', () =>{
             .send({text})
             .expect (400)
             .end((err, res) => {
-                if(err){
-                    return done(err);
-                }
+                if(err){ return done(err); }
 
                 Todo.find().then((todos) =>{
                     expect(todos.length).toBe(2);
@@ -75,5 +73,43 @@ describe('GET /todos', () =>{
                 expect(todos.length).toBe(2);
             })
             .end (done);
+    });
+});
+
+//test script for GET /todos/:id
+describe('GET /todos/:id', () =>{
+    it('should return todo doc', (done) => {
+        request (app)
+            .get (`/todos/${todos[0]._id.toHexString()}`)
+            .expect (200)
+            .expect((res) =>{
+                 expect(res.body.todo.text).toBe(todos[0].text);
+            })
+            .end (done);
+    });
+
+    it('should return 404 if todo not found', (done) =>{
+        let id = new ObjectID().toHexString(); //make a 24byte hex string
+        // let id = new ObjectID()+ 1; //another way to make valid but not existed id
+        request (app)
+            .get (`/todos/${id}`)
+            .expect (404)
+            .expect((res) =>{
+                expect('item not existed'); //the value we send in the server.js
+            })
+            .end(done);
+    });
+
+    it('should return 404 non-object ids', (done) =>{
+        let id = (new ObjectID()) .abc ; //make an invalid id
+        request (app)
+            .get (`/todos/${id}`)
+            // .get (`/todos/123abc`) //directly add an invalid id
+            .expect (404)
+            .expect((res) =>{
+                // expect(res.body.todo.text).toBe('id invalid');
+                expect('id invalid');
+            })
+            .end(done);
     });
 });
