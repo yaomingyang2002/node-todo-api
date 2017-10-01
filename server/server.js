@@ -62,9 +62,9 @@ app.delete('/todos/:id', (req, res) => {
     Todo.findByIdAndRemove(id).then((todo) => {
         if (!todo){//valid id but no item existed
         return res.status (404).send('item not existed');
-    }
-    //success
-    res.status(200).send({todo});
+        }
+        //success
+        res.status(200).send({todo});
     }).catch((e) => {
         res.status (400).send();
     });
